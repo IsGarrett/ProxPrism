@@ -1,5 +1,6 @@
 from fastapi import Depends, FastAPI, APIRouter
 from db import get_db
+from schemas.lxc import LXCResponse
 from services.auth import get_current_user
 from services.database import log_action
 from services.proxmox import prox
@@ -11,16 +12,16 @@ router = APIRouter()
 
 
 #get all containers
-@router.get('/v1/containers')
+@router.get('/v1/containers', response_model=list[LXCResponse])
 def get_containers(current_user: str = Depends(get_current_user)):
     containers = prox.nodes("homelab").lxc.get()
-    return [parse_lxc_status(container) for container in containers]
+    return containers
 
 #get specific container
-@router.get('/v1/containers/{vmid}')
+@router.get('/v1/containers/{vmid}', response_model=LXCResponse)
 def get_container(vmid: int, current_user: str = Depends(get_current_user)):
     container = prox.nodes("homelab").lxc(vmid).status.current.get()
-    return parse_lxc_status(container)
+    return container
 
 #start lxc
 @router.post('/v1/containers/{vmid}/start')
