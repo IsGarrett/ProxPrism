@@ -17,9 +17,10 @@ jobs:
           .venv/bin/pip install -r requirements.txt
           .venv/bin/pip install pytest httpx
 
-
       - name: Run tests
-        run: echo "No tests yet — pipeline works"
+        run: | 
+        echo "Running Unit Tests"
+        .venv/bin/pytest tests/ -v
 
   deploy:
     needs: test
