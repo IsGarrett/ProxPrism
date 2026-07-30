@@ -34,3 +34,21 @@ def test_get_vm_200():
         assert response.status_code == 200
         assert response.json()["vmid"] == 100
         assert response.json()["name"] == "test-vm"
+
+def test_start_vm():
+    mock_upid = "UPID:homelab:0034029F:0C0433D8:6A6AC092:qmstart:100:glambert@pam!proxmoxer:"
+
+    with patch("endpoints.virtual_machines.prox") as mock_prox:
+        mock_prox.nodes.return_value.qemu.return_value.status.start.post.return_value = mock_upid
+        response = client.post("/v1/vms/100/start")
+        assert response.status_code == 200
+        assert "UPID" in response.json()
+
+def test_stop_vm():
+    mock_upid = "UPID:homelab:0034029F:0C0433D8:6A6AC092:qmstart:100:glambert@pam!proxmoxer:"
+
+    with patch("endpoints.virtual_machines.prox") as mock_prox:
+        mock_prox.nodes.return_value.qemu.return_value.status.stop.post.return_value = mock_upid
+        response = client.post("/v1/vms/100/stop")
+        assert response.status_code == 200
+        assert "UPID" in response.json()
