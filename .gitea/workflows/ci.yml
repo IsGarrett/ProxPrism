@@ -26,18 +26,32 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        run: | 
+        run: |
           echo "Running Unit Tests"
           .venv/bin/pytest tests/ -v
 
-  deploy:
+  build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to ProxPrism VM
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to Gitea registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login 192.168.68.65:3000 -u ${{ secrets.REGISTRY_USER }} --password-stdin
+
+      - name: Build and push image
+        run: |
+          docker build --platform linux/amd64 -t 192.168.68.65:3000/gitea/proxprism:latest .
+          docker push 192.168.68.65:3000/gitea/proxprism:latest
+
+      - name: Deploy to k3s
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} \
-            "cd /opt/proxmoxapi && git pull && sudo systemctl restart proxmoxapi"
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              ${{ secrets.SSH_USER }}@${{ secrets.K3S_SERVER_IP }} \
+              "/usr/local/bin/k3s kubectl rollout restart deployment proxprism && echo 'Rollout triggered successfully'"
