@@ -53,5 +53,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
+              -o BatchMode=yes \
+              -o ConnectTimeout=10 \
               ${{ secrets.SSH_USER }}@${{ secrets.K3S_SERVER_IP }} \
               "/usr/local/bin/k3s kubectl rollout restart deployment proxprism && echo 'Rollout triggered successfully'"
